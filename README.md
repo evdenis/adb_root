@@ -103,3 +103,17 @@ index 8518f2e..24f9def 100644
 ```
 
 </details>
+
+## How to install:
+
+Stable release:
+1. Dowload latest adb_root.zip from releases page
+   https://github.com/evdenis/adb_root/releases
+2. MagiskManager -> Modules + Downloads/adb_root.zip -> Reboot
+
+Master branch:
+1. git clone https://github.com/evdenis/adb_root
+2. cd adb_root
+3. git archive --output adb_root.zip HEAD
+4. adb push adb_root.zip /sdcard/
+5. MagiskManager -> Modules + adb_root.zip -> Reboot
