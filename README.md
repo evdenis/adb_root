@@ -117,3 +117,7 @@ Master branch:
 3. git archive --output adb_root.zip HEAD
 4. adb push adb_root.zip /sdcard/
 5. MagiskManager -> Modules + adb_root.zip -> Reboot
+
+## Support
+
+- [Telegram](https://t.me/joinchat/GsJfBBaxozXvVkSJhm0IOQ)
