@@ -1,7 +1,9 @@
 # ADB Root
 
 You don't need this module if you don't know what is "adb root". It's not an
-ordinary root (su).
+ordinary root (su), it's the adbd daemon running on your phone with root rights.
+adb root allows you to "adb push/pull" to system directories and run such commands
+as "adb remount" or "adb disable-verify".
 
 This is a highly insecure magisk module.
 Don't forget to disable it once you've done all the things you need.
