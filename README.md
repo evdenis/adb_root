@@ -121,3 +121,4 @@ Master branch:
 ## Support
 
 - [Telegram](https://t.me/joinchat/GsJfBBaxozXvVkSJhm0IOQ)
+- [XDA Thread](https://forum.xda-developers.com/apps/magisk/module-debugging-modules-adb-root-t4050041)
