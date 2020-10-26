@@ -116,9 +116,7 @@ Stable release:
 Master branch:
 1. git clone https://github.com/evdenis/adb_root
 2. cd adb_root
-3. git archive --output adb_root.zip HEAD
-4. adb push adb_root.zip /sdcard/
-5. MagiskManager -> Modules + adb_root.zip -> Reboot
+3. make install
 
 ## Support
 
