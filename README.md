@@ -1,5 +1,7 @@
 # ADB Root
 
+Android 9/10 only. Will not work on Android 11.
+
 You don't need this module if you don't know what is "adb root". It's not an
 ordinary root (su), it's the adbd daemon running on your phone with root rights.
 adb root allows you to "adb push/pull" to system directories and run such commands
