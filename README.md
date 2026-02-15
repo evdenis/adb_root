@@ -111,7 +111,7 @@ index 8518f2e..24f9def 100644
 ## How to install:
 
 Stable release:
-1. Dowload latest adb_root.zip from releases page
+1. Download latest adb_root.zip from releases page
    https://github.com/evdenis/adb_root/releases
 2. MagiskManager -> Modules + Downloads/adb_root.zip -> Reboot
 
