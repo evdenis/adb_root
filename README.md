@@ -110,6 +110,8 @@ index 8518f2e..24f9def 100644
 
 ## How to install:
 
+**Requirements:** Android 9/10, aarch64 device, Magisk v20.4+
+
 Stable release:
 1. Download latest adb_root.zip from releases page
    https://github.com/evdenis/adb_root/releases
