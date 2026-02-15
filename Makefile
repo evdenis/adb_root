@@ -8,7 +8,7 @@ all: $(ZIP)
 
 zip: $(ZIP)
 
-%.zip: clean
+$(ZIP): clean
 	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE .gitignore .gitattributes Makefile /.git*
 
 install: $(ZIP)
