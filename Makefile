@@ -20,6 +20,7 @@ clean:
 	rm -f *.zip
 
 update:
-	curl -f https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/module_installer.sh > META-INF/com/google/android/update-binary
+	curl -fS -o META-INF/com/google/android/update-binary.tmp https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/module_installer.sh && \
+	mv META-INF/com/google/android/update-binary.tmp META-INF/com/google/android/update-binary
 
 .PHONY: all zip install clean update
