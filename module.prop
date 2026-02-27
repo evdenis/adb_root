@@ -4,3 +4,4 @@ version=v1
 versionCode=1
 author=Denis Efremov (@evdenis)
 description=Allows to "adb root" regardless of props settings and skips usb keys auth. Kind of "adbd Insecure" as a Magisk Module. Arm64 only.
+updateJson=https://github.com/evdenis/adb_root/releases/latest/download/update.json
