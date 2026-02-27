@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build zip
+        run: make zip
+
+      - name: Generate update.json
+        run: |
+          VERSION=$(grep '^version=' module.prop | cut -d'=' -f2)
+          VERSION_CODE=$(grep '^versionCode=' module.prop | cut -d'=' -f2)
+          ID=$(grep '^id=' module.prop | cut -d'=' -f2)
+          TAG="${GITHUB_REF#refs/tags/}"
+          REPO="${GITHUB_REPOSITORY}"
+          cat > update.json <<EOF
+          {
+            "versionCode": ${VERSION_CODE},
+            "version": "${VERSION}",
+            "zipUrl": "https://github.com/${REPO}/releases/download/${TAG}/${ID}-${VERSION}.zip",
+            "changelog": "https://github.com/${REPO}/releases/tag/${TAG}"
+          }
+          EOF
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            adb_root-v*.zip \
+            update.json
