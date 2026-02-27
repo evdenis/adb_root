@@ -9,7 +9,7 @@ all: $(ZIP)
 zip: $(ZIP)
 
 $(ZIP): clean
-	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE .gitignore .gitattributes Makefile /.git*
+	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE .gitignore .gitattributes Makefile CLAUDE.md /.git* /.github* /.claude*
 
 install: $(ZIP)
 	adb push $(ZIP) /sdcard/ && \
