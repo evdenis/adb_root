@@ -94,6 +94,55 @@ def main():
         "",
     )
 
+    # ── Static linking patches for adbd binary ──
+    android_bp = os.path.join(core, "adb/Android.bp")
+    print(f"Patching {android_bp}")
+
+    # 6. Enable static_executable and disable implicit STL shared lib
+    patch_file(
+        android_bp,
+        'adbd: add static_executable: true and stl: "none"',
+        '    name: "adbd",',
+        '    name: "adbd",\n'
+        '    static_executable: true,\n'
+        '    stl: "none",',
+    )
+
+    # 7. Convert shared_libs to static_libs and add bionic/STL static libs
+    patch_file(
+        android_bp,
+        "adbd: convert shared_libs to static_libs with bionic",
+        '    shared_libs: [\n'
+        '        "libadbd",\n'
+        '        "libadbd_services",\n'
+        '        "libbase",\n'
+        '        "libcap",\n'
+        '        "libcrypto",\n'
+        '        "libcutils",\n'
+        '        "liblog",\n'
+        '        "libminijail",\n'
+        '        "libselinux",\n'
+        '    ]',
+        '    static_libs: [\n'
+        '        "libadbd",\n'
+        '        "libadbd_services",\n'
+        '        "libbase",\n'
+        '        "libcap",\n'
+        '        "libcrypto",\n'
+        '        "libcutils",\n'
+        '        "liblog",\n'
+        '        "libminijail",\n'
+        '        "libselinux",\n'
+        '        "libasyncio",\n'
+        '        "libcrypto_utils",\n'
+        '        "libmdnssd",\n'
+        '        "libc++_static",\n'
+        '        "libc",\n'
+        '        "libm",\n'
+        '        "libdl",\n'
+        '    ]',
+    )
+
     print("All patches applied successfully")
 
 

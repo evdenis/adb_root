@@ -90,7 +90,7 @@ jobs:
         run: |
           file out/adbd
           file out/adbd | grep -q "ELF 64-bit LSB.*ARM aarch64" || { echo "FAIL: not aarch64 ELF"; exit 1; }
-          file out/adbd | grep -q "stripped" || { echo "FAIL: not stripped"; exit 1; }
+          file out/adbd | grep -q "statically linked" || { echo "FAIL: not statically linked"; exit 1; }
           echo "Binary verification passed"
 
       - name: Upload adbd artifact

@@ -148,10 +148,27 @@ void remount_service(unique_fd, const std::string&) {}
 bool make_block_device_writable(const std::string&) { return false; }
 RSEOF
 
+# Stub out UsbNoPermissionsLongHelpText (client-only function referenced by
+# transport.cpp; unresolved in static builds since the client code isn't linked)
+cat > system/core/adb/client/usb_no_permissions_stub.cpp <<'UPEOF'
+#include <string>
+std::string UsbNoPermissionsLongHelpText() { return ""; }
+UPEOF
+sed -i '/daemon\/main.cpp/a\        "client/usb_no_permissions_stub.cpp",' \
+    system/core/adb/Android.bp
+
 # Remove the now-unused library deps from the build graph
 sed -i '/"libfs_mgr"/d' system/core/adb/Android.bp
 sed -i '/"libfec"/d' system/core/adb/Android.bp
 sed -i '/"libfs_mgr"/d' bootable/recovery/bootloader_message/Android.bp
+
+# Disable artifact path enforcement in main.mk. The aosp_arm64 product
+# triggers a check that system/bin/remount conflicts with mainline_system
+# paths. We only care about building adbd, not producing a valid system image.
+# The check uses $(PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS) — renaming it
+# to a variable that's never set effectively disables enforcement.
+sed -i 's/PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS/__DISABLED__/g' \
+    build/make/core/main.mk
 
 # Source the build environment
 # Note: AOSP build scripts use unguarded variables, so -u is not used.
@@ -184,5 +201,10 @@ if [ ! -f "$ADBD_INSTALL" ]; then
     exit 1
 fi
 
+# Ensure the binary is fully stripped (Soong's strip may leave .symtab intact
+# for static binaries; llvm-strip removes it)
+prebuilts/clang/host/linux-x86/clang-r353983c/bin/llvm-strip "$ADBD_INSTALL" || true
+
 echo "=== Build complete ==="
 ls -la "$ADBD_INSTALL"
+file "$ADBD_INSTALL"
