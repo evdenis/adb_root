@@ -135,6 +135,18 @@ Master branch:
 2. cd adb_root
 3. make install
 
+## Testing
+
+Run binary sanity checks against the committed `system/bin/adbd`:
+
+```bash
+make test-adbd
+```
+
+This runs `tests/test-adbd-binary.sh` which validates ELF format, architecture,
+static linking, file size, and more. If `qemu-aarch64-static` is installed, it
+also runs a QEMU smoke test to verify the binary starts up.
+
 ## Troubleshooting
 
 **Device disappears / goes offline after reboot:**
