@@ -9,7 +9,7 @@ all: $(ZIP)
 zip: $(ZIP)
 
 $(ZIP): clean
-	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes Makefile /hooks/* /.git* /.github* /.claude*
+	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes Makefile Dockerfile build-adbd.sh /patches* /hooks/* /.git* /.github* /.claude*
 
 install: $(ZIP)
 	adb push $(ZIP) /sdcard/ && \
@@ -18,6 +18,9 @@ install: $(ZIP)
 
 clean:
 	rm -f *.zip
+
+build-adbd:
+	DOCKER_BUILDKIT=1 docker build --target=binary --output=system/bin/ .
 
 update:
 	curl -fS -o META-INF/com/google/android/update-binary.tmp https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/module_installer.sh && \
@@ -30,4 +33,4 @@ setup:
 changelog:
 	git-cliff --config cliff.toml --output CHANGELOG.md
 
-.PHONY: all zip install clean setup update changelog
+.PHONY: all zip install clean setup update changelog build-adbd

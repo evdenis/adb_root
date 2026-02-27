@@ -54,7 +54,9 @@ jobs:
       - name: Verify excluded files are absent
         run: |
           ZIP=$(ls adb_root-v*.zip)
-          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE README.md CHANGELOG.md update.json cliff.toml hooks/; do
+          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE \
+                   README.md CHANGELOG.md update.json cliff.toml hooks/ \
+                   Dockerfile build-adbd.sh patches/; do
             if unzip -l "$ZIP" | grep -q "$f"; then
               echo "UNEXPECTED: $f found in zip"
               exit 1
@@ -68,3 +70,32 @@ jobs:
             grep -q "^${field}=" module.prop || { echo "MISSING field: $field"; exit 1; }
           done
           echo "All required fields present"
+
+  build-adbd:
+    name: Build adbd from source
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' ||
+      contains(github.event.pull_request.labels.*.name, 'build-adbd')
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build adbd binary
+        run: DOCKER_BUILDKIT=1 docker build --target=binary --output=type=local,dest=out/ .
+
+      - name: Verify binary
+        run: |
+          file out/adbd
+          file out/adbd | grep -q "ELF 64-bit LSB.*ARM aarch64" || { echo "FAIL: not aarch64 ELF"; exit 1; }
+          file out/adbd | grep -q "stripped" || { echo "FAIL: not stripped"; exit 1; }
+          echo "Binary verification passed"
+
+      - name: Upload adbd artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adbd-aarch64
+          path: out/adbd
+          retention-days: 7

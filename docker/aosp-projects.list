@@ -1,0 +1,55 @@
+# AOSP projects required for building adbd (Android 10, aarch64)
+#
+# One project per line. Blank lines and comments (#) are ignored.
+
+# Build system
+build/make
+build/soong
+build/blueprint
+
+# Prebuilts — toolchains and support
+prebuilts/build-tools
+prebuilts/go/linux-x86
+prebuilts/clang/host/linux-x86
+prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8
+prebuilts/clang-tools
+prebuilts/ndk
+prebuilts/misc
+
+# Bionic (Android libc)
+bionic
+
+# System
+system/core
+system/extras
+system/tools/aidl
+
+# Frameworks
+frameworks/native
+
+# Bootable
+bootable/recovery
+
+# External dependencies
+external/boringssl
+external/selinux
+external/pcre
+external/minijail
+external/libcap
+external/jemalloc_new
+external/libcxx
+external/libcxxabi
+external/compiler-rt
+external/golang-protobuf
+external/googletest
+external/zlib
+external/lz4
+external/lzma
+external/avb
+external/mdnsresponder
+external/e2fsprogs
+external/squashfs-tools
+external/libunwind
+external/libunwind_llvm
+external/arm-optimized-routines
