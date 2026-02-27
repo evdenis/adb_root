@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint service.sh
+        run: shellcheck service.sh
+
+  zip:
+    name: Build & verify zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build zip
+        run: make zip
+
+      - name: Verify zip was created
+        run: ls adb_root-v*.zip
+
+      - name: Verify expected files are present
+        run: |
+          ZIP=$(ls adb_root-v*.zip)
+          for f in module.prop service.sh system.prop sepolicy.rule system/bin/adbd \
+                   META-INF/com/google/android/update-binary \
+                   META-INF/com/google/android/updater-script; do
+            unzip -l "$ZIP" | grep -q "$f" || { echo "MISSING: $f"; exit 1; }
+          done
+          echo "All expected files present"
+
+      - name: Verify excluded files are absent
+        run: |
+          ZIP=$(ls adb_root-v*.zip)
+          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE; do
+            if unzip -l "$ZIP" | grep -q "$f"; then
+              echo "UNEXPECTED: $f found in zip"
+              exit 1
+            fi
+          done
+          echo "No excluded files in zip"
+
+      - name: Verify module.prop has required fields
+        run: |
+          for field in id name version versionCode; do
+            grep -q "^${field}=" module.prop || { echo "MISSING field: $field"; exit 1; }
+          done
+          echo "All required fields present"
