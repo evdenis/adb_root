@@ -22,6 +22,10 @@ jobs:
             [ -f "$f" ] || continue
             shellcheck -s sh "$f" || STATUS=1
           done
+          for f in common/*.sh; do
+            [ -f "$f" ] || continue
+            shellcheck -s sh "$f" || STATUS=1
+          done
           exit $STATUS
 
   zip:
@@ -39,7 +43,8 @@ jobs:
       - name: Verify expected files are present
         run: |
           ZIP=$(ls adb_root-v*.zip)
-          for f in module.prop service.sh system.prop sepolicy.rule customize.sh uninstall.sh system/bin/adbd \
+          for f in module.prop service.sh customize.sh common/default_config.sh \
+                   system.prop sepolicy.rule uninstall.sh system/bin/adbd \
                    META-INF/com/google/android/update-binary \
                    META-INF/com/google/android/updater-script; do
             unzip -l "$ZIP" | grep -q "$f" || { echo "MISSING: $f"; exit 1; }
