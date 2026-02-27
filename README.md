@@ -1,20 +1,33 @@
 # ADB Root
 
-Android 9/10 only. Will not work on Android 11.
+A Magisk module that runs the `adbd` daemon as root and skips USB authentication.
+
+This module only supports **Android 9/10** on **aarch64** devices.
+
+## Compatibility
+
+| Android Version | Architecture | Status |
+|-----------------|-------------|--------|
+| 9 (Pie) | arm64/aarch64 | Supported |
+| 10 (Q) | arm64/aarch64 | Supported |
+| 9/10 | arm/x86/x86_64 | Not supported (arm64 binary only) |
+| 8 (Oreo) and below | any | Not supported |
+| 11+ | any | Not supported |
+
+## What this does
 
 You don't need this module if you don't know what is "adb root". It's not an
 ordinary root (su), it's the adbd daemon running on your phone with root rights.
 adb root allows you to "adb push/pull" to system directories and run such commands
 as "adb remount" or "adb disable-verify".
 
-This is a highly insecure magisk module.
+**This is a highly insecure magisk module.**
 Don't forget to disable it once you've done all the things you need.
 Don't use it constantly.
 
-This module allows you to run adb daemon from root user. It provides own adbd binary.
-The binary obtained from AOSP sources with the following patch that disables props
-checks and usb auth. The binary is required because "adb root" can be disabled
-in compile time by some vendors. Aarch64 only.
+This module provides a patched adbd binary obtained from AOSP sources that disables
+props checks and USB auth. The binary is required because "adb root" can be disabled
+at compile time by some vendors.
 
 <details>
 
@@ -27,7 +40,7 @@ index d064d0d..a520bfd 100644
 +++ b/adb/daemon/main.cpp
 @@ -51,48 +51,11 @@
  static const char* root_seclabel = nullptr;
- 
+
  static bool should_drop_capabilities_bounding_set() {
 -#if defined(ALLOW_ADBD_ROOT)
 -    if (__android_log_is_debuggable()) {
@@ -37,7 +50,7 @@ index d064d0d..a520bfd 100644
 -    return true;
 +    return false;
  }
- 
+
  static bool should_drop_privileges() {
 -#if defined(ALLOW_ADBD_ROOT)
 -    // The properties that affect `adb root` and `adb unroot` are ro.secure and
@@ -74,19 +87,19 @@ index d064d0d..a520bfd 100644
 -#endif // ALLOW_ADBD_ROOT
 +    return false;
  }
- 
+
  static void drop_privileges(int server_port) {
 @@ -183,9 +146,7 @@ int adbd_main(int server_port) {
      // descriptor will always be open.
      adbd_cloexec_auth_socket();
- 
+
 -    if (ALLOW_ADBD_NO_AUTH && !android::base::GetBoolProperty("ro.adb.secure", false)) {
 -        auth_required = false;
 -    }
 +    auth_required = false;
- 
+
      adbd_auth_init();
- 
+
 diff --git a/adb/services.cpp b/adb/services.cpp
 index 8518f2e..24f9def 100644
 --- a/adb/services.cpp
@@ -108,7 +121,7 @@ index 8518f2e..24f9def 100644
 
 </details>
 
-## How to install:
+## How to install
 
 **Requirements:** Android 9/10, aarch64 device, Magisk v20.4+
 
@@ -121,6 +134,30 @@ Master branch:
 1. git clone https://github.com/evdenis/adb_root
 2. cd adb_root
 3. make install
+
+## Troubleshooting
+
+**Device disappears / goes offline after reboot:**
+Some vendors (Samsung DEFEX, Huawei, etc.) have kernel-level security that kills
+modified system binaries. The v2 module includes a `service.sh` script that
+automatically restarts adbd after boot. If the device still disappears, the module
+will auto-disable itself on the next boot — simply reboot again to recover.
+
+**`adb install` or `adb pull` fails with permission errors:**
+This is caused by missing SELinux permissions. v2 includes expanded sepolicy rules
+that should fix this. If you still see denials, check `adb logcat | grep avc` for
+the specific denial and report it.
+
+**`adb root` says "already running as root" but shell is not root:**
+Make sure `adb shell id` shows `uid=0(root)`. If not, try `adb kill-server && adb root`.
+The v2 module sets `service.adb.root=1` via `system.prop` which helps with this.
+
+**Module doesn't work on Android 11+:**
+This module's patched binary only works on Android 9/10.
+
+**Module doesn't work on 32-bit devices:**
+The patched adbd binary is compiled for aarch64 (arm64) only. There are no plans to
+support 32-bit architectures.
 
 ## Support
 
