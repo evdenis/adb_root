@@ -34,6 +34,9 @@ test-adbd: $(addprefix test-adbd-,$(ARCHES))
 test-adbd-%:
 	./tests/test-adbd-binary.sh system/bin/adbd.$* $*
 
+test-emulator:
+	./tests/test-emulator.sh
+
 update:
 	curl -fS -o META-INF/com/google/android/update-binary.tmp https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/module_installer.sh && \
 	mv META-INF/com/google/android/update-binary.tmp META-INF/com/google/android/update-binary
@@ -45,4 +48,4 @@ setup:
 changelog:
 	git-cliff --config cliff.toml --output CHANGELOG.md
 
-.PHONY: all zip install clean setup update changelog build-adbd test-adbd
+.PHONY: all zip install clean setup update changelog build-adbd test-adbd test-emulator
