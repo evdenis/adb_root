@@ -1,4 +1,4 @@
-# AOSP projects required for building adbd (Android 10, aarch64)
+# AOSP projects required for building adbd (Android 10, all supported architectures)
 #
 # One project per line. Blank lines and comments (#) are ignored.
 
@@ -12,6 +12,8 @@ prebuilts/build-tools
 prebuilts/go/linux-x86
 prebuilts/clang/host/linux-x86
 prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
+prebuilts/gcc/linux-x86/x86/x86_64-linux-android-4.9
 prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8
 prebuilts/clang-tools
 prebuilts/ndk

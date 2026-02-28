@@ -1,6 +1,9 @@
 #!/bin/bash
 # build-adbd.sh — Build adbd using the AOSP Soong build system
 #
+# Usage: bash build-adbd.sh [TARGET_ARCH]
+#   TARGET_ARCH: arm64 (default), arm, x86, x86_64
+#
 # This script is invoked inside the Docker build container after
 # repo sync and patch application.
 #
@@ -9,6 +12,41 @@
 # same toolchain as upstream AOSP.
 
 set -eo pipefail
+
+TARGET_ARCH="${1:-arm64}"
+
+case "$TARGET_ARCH" in
+    arm64)
+        LUNCH_TARGET="aosp_arm64-eng"
+        PRODUCT_DIR="generic_arm64"
+        VNDK_ARCH="arm64"
+        ;;
+    arm)
+        LUNCH_TARGET="aosp_arm-eng"
+        PRODUCT_DIR="generic"
+        VNDK_ARCH="arm"
+        ;;
+    x86)
+        LUNCH_TARGET="aosp_x86-eng"
+        PRODUCT_DIR="generic_x86"
+        VNDK_ARCH="x86"
+        ;;
+    x86_64)
+        LUNCH_TARGET="aosp_x86_64-eng"
+        PRODUCT_DIR="generic_x86_64"
+        VNDK_ARCH="x86_64"
+        ;;
+    *)
+        echo "ERROR: Unsupported architecture: $TARGET_ARCH"
+        echo "Supported: arm64, arm, x86, x86_64"
+        exit 1
+        ;;
+esac
+
+echo "=== Building adbd for $TARGET_ARCH ==="
+echo "  Lunch target: $LUNCH_TARGET"
+echo "  Product dir:  $PRODUCT_DIR"
+echo "  VNDK arch:    $VNDK_ARCH"
 
 cd /aosp
 
@@ -21,11 +59,11 @@ export ALLOW_MISSING_DEPENDENCIES=true
 export DISABLE_APEX_LIBS_ABSENCE_CHECK=true
 
 # Create stub VNDK directories to satisfy the build system's version check.
-# The aosp_arm64 product config requires VNDK snapshots that we haven't synced.
+# The product config requires VNDK snapshots that we haven't synced.
 for v in 27 28 29; do
-    mkdir -p "prebuilts/vndk/v${v}/arm64"
+    mkdir -p "prebuilts/vndk/v${v}/$VNDK_ARCH"
     echo 'cc_prebuilt_library_shared { name: "vndk_v'${v}'_stub", enabled: false }' \
-        > "prebuilts/vndk/v${v}/arm64/Android.bp"
+        > "prebuilts/vndk/v${v}/$VNDK_ARCH/Android.bp"
 done
 
 # Create stub for platform_tools_version genrule.
@@ -175,8 +213,8 @@ sed -i 's/PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS/__DISABLED__/g' \
 # shellcheck disable=SC1091
 source build/envsetup.sh
 
-# Select generic arm64 eng build (eng enables ALLOW_ADBD_ROOT)
-lunch aosp_arm64-eng
+# Select target product (eng enables ALLOW_ADBD_ROOT)
+lunch "$LUNCH_TARGET"
 
 # Build adbd and its dependencies.
 # Use -k to keep going past failures in unrelated modules.
@@ -185,14 +223,18 @@ make adbd -j"$(nproc)" -k || true
 # The 'make adbd' target builds both core and recovery variants.
 # The recovery variant may fail due to un-synced libfs_mgr deps.
 # If the install path is missing, copy the core variant directly.
-ADBD_INSTALL=out/target/product/generic_arm64/system/bin/adbd
-ADBD_SOONG=out/soong/.intermediates/system/core/adb/adbd/android_arm64_armv8-a_core/unstripped/adbd
+ADBD_INSTALL="out/target/product/$PRODUCT_DIR/system/bin/adbd"
 
-if [ ! -f "$ADBD_INSTALL" ] && [ -f "$ADBD_SOONG" ]; then
-    echo "=== Recovery variant blocked install; copying core variant ==="
-    mkdir -p out/target/product/generic_arm64/system/bin
-    cp "$ADBD_SOONG" "$ADBD_INSTALL"
-    prebuilts/clang/host/linux-x86/clang-r353983c/bin/llvm-strip "$ADBD_INSTALL" || true
+if [ ! -f "$ADBD_INSTALL" ]; then
+    # Soong variant names differ per arch, so use find instead of hardcoding
+    ADBD_SOONG="$(find out/soong/.intermediates/system/core/adb/adbd/ \
+        -name adbd -path "*/core/unstripped/*" 2>/dev/null | head -1)"
+    if [ -n "$ADBD_SOONG" ]; then
+        echo "=== Recovery variant blocked install; copying core variant ==="
+        mkdir -p "out/target/product/$PRODUCT_DIR/system/bin"
+        cp "$ADBD_SOONG" "$ADBD_INSTALL"
+        prebuilts/clang/host/linux-x86/clang-r353983c/bin/llvm-strip "$ADBD_INSTALL" || true
+    fi
 fi
 
 if [ ! -f "$ADBD_INSTALL" ]; then
@@ -205,6 +247,9 @@ fi
 # for static binaries; llvm-strip removes it)
 prebuilts/clang/host/linux-x86/clang-r353983c/bin/llvm-strip "$ADBD_INSTALL" || true
 
-echo "=== Build complete ==="
-ls -la "$ADBD_INSTALL"
-file "$ADBD_INSTALL"
+# Copy to a fixed output path for Docker extraction
+cp "$ADBD_INSTALL" /aosp/out/adbd
+
+echo "=== Build complete ($TARGET_ARCH) ==="
+ls -la /aosp/out/adbd
+file /aosp/out/adbd

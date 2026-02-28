@@ -1,12 +1,14 @@
-# Dockerfile — Build AOSP adbd (aarch64) using the Soong build system
+# Dockerfile — Build AOSP adbd using the Soong build system
 #
 # Usage:
-#   DOCKER_BUILDKIT=1 docker build --target=binary --output=system/bin/ .
+#   DOCKER_BUILDKIT=1 docker build --build-arg TARGET_ARCH=arm64 \
+#       --target=binary --output=type=local,dest=out/ .
 
 # ── Stage 1: Builder ──
 FROM ubuntu:20.04 AS builder
 
 ARG AOSP_TAG=android-security-10.0.0_r75
+ARG TARGET_ARCH=arm64
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -37,8 +39,8 @@ RUN bash /docker/sync-aosp.sh "$AOSP_TAG" /docker/aosp-projects.list
 COPY patches/ /patches/
 COPY build-adbd.sh /build-adbd.sh
 RUN python3 /patches/apply.py /aosp/system/core \
-    && bash /build-adbd.sh
+    && bash /build-adbd.sh "$TARGET_ARCH"
 
 # ── Stage 2: Extract binary ──
 FROM scratch AS binary
-COPY --from=builder /aosp/out/target/product/generic_arm64/system/bin/adbd /adbd
+COPY --from=builder /aosp/out/adbd /adbd

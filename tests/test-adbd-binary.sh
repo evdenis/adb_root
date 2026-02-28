@@ -1,17 +1,49 @@
 #!/usr/bin/env bash
 #
 # Binary sanity tests for the adbd binary.
-# Usage: ./tests/test-adbd-binary.sh [path/to/adbd]
+# Usage: ./tests/test-adbd-binary.sh [path/to/adbd] [arch]
+#   arch: arm64 (default), arm, x86, x86_64
 #
 
 set -euo pipefail
 
 BINARY="${1:-system/bin/adbd}"
+ARCH="${2:-arm64}"
 
 if [[ ! -f "$BINARY" ]]; then
     echo "ERROR: binary not found: $BINARY"
     exit 1
 fi
+
+case "$ARCH" in
+    arm64)
+        ELF_PATTERN="ELF 64-bit LSB executable, ARM aarch64"
+        MACHINE_PATTERN="Machine:.*AArch64"
+        QEMU_BIN="qemu-aarch64-static"
+        ;;
+    arm)
+        ELF_PATTERN="ELF 32-bit LSB executable, ARM, EABI5"
+        MACHINE_PATTERN="Machine:.*ARM"
+        QEMU_BIN="qemu-arm-static"
+        ;;
+    x86)
+        ELF_PATTERN="ELF 32-bit LSB executable, Intel"
+        MACHINE_PATTERN="Machine:.*Intel 80386"
+        QEMU_BIN="qemu-i386-static"
+        ;;
+    x86_64)
+        ELF_PATTERN="ELF 64-bit LSB executable, x86-64"
+        MACHINE_PATTERN="Machine:.*Advanced Micro Devices X86-64"
+        QEMU_BIN="qemu-x86_64-static"
+        ;;
+    *)
+        echo "ERROR: unsupported arch: $ARCH (expected: arm64, arm, x86, x86_64)"
+        exit 1
+        ;;
+esac
+
+echo "Testing $BINARY (expected arch: $ARCH)"
+echo ""
 
 PASS=0
 FAIL=0
@@ -28,11 +60,11 @@ fail() {
 
 FILE_OUT="$(file "$BINARY")"
 
-# 1. ELF format + aarch64
-if echo "$FILE_OUT" | grep -q "ELF 64-bit LSB executable, ARM aarch64"; then
-    pass "ELF 64-bit aarch64 executable"
+# 1. ELF format + correct architecture
+if echo "$FILE_OUT" | grep -q "$ELF_PATTERN"; then
+    pass "$ELF_PATTERN"
 else
-    fail "ELF 64-bit aarch64 executable — got: $FILE_OUT"
+    fail "$ELF_PATTERN — got: $FILE_OUT"
 fi
 
 # 2. Statically linked
@@ -72,11 +104,11 @@ else
     fail "ELF type is EXEC — got: $(echo "$READELF_H" | grep 'Type:')"
 fi
 
-# 7. Machine is AArch64
-if echo "$READELF_H" | grep -q "Machine:.*AArch64"; then
-    pass "machine is AArch64"
+# 7. Machine matches expected architecture
+if echo "$READELF_H" | grep -q "$MACHINE_PATTERN"; then
+    pass "machine matches $ARCH"
 else
-    fail "machine is AArch64 — got: $(echo "$READELF_H" | grep 'Machine:')"
+    fail "machine matches $ARCH — got: $(echo "$READELF_H" | grep 'Machine:')"
 fi
 
 # 8. Reasonable file size (500KB–10MB)
@@ -118,8 +150,8 @@ run_qemu() {
 
 
 # 10–12. QEMU smoke tests
-if command -v qemu-aarch64-static >/dev/null 2>&1; then
-    QEMU="qemu-aarch64-static"
+if command -v "$QEMU_BIN" >/dev/null 2>&1; then
+    QEMU="$QEMU_BIN"
 
     # 10. --version prints ADB version string with a version number
     QEMU_VER="$(ulimit -c 0; run_qemu "$QEMU" "$BINARY" --version 2>&1 || true)"
@@ -149,7 +181,7 @@ if command -v qemu-aarch64-static >/dev/null 2>&1; then
         fail "QEMU strace missing /dev/socket/logdw — output: $(tail -5 "$STRACE_LOG")"
     fi
 else
-    echo "SKIP: QEMU smoke tests (qemu-aarch64-static not installed)"
+    echo "SKIP: QEMU smoke tests ($QEMU_BIN not installed)"
 fi
 
 echo ""

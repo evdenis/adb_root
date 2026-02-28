@@ -4,12 +4,14 @@ MODNAME ?= $(call getprop,id)
 MODVER ?= $(call getprop,version)
 ZIP = $(MODNAME)-$(MODVER).zip
 
+ARCHES := arm64 arm x86 x86_64
+
 all: $(ZIP)
 
 zip: $(ZIP)
 
 $(ZIP): clean
-	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes .dockerignore Makefile Dockerfile build-adbd.sh /docker* /patches* /tests* /hooks/* /.git* /.github* /.claude*
+	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes .dockerignore Makefile Dockerfile build-adbd.sh /docker* /patches* /tests* /hooks/* /.git* /.github* /.claude* /out*
 
 install: $(ZIP)
 	adb push $(ZIP) /sdcard/ && \
@@ -19,11 +21,18 @@ install: $(ZIP)
 clean:
 	rm -f *.zip
 
-build-adbd:
-	DOCKER_BUILDKIT=1 docker build --target=binary --output=system/bin/ .
+build-adbd: $(addprefix build-adbd-,$(ARCHES))
 
-test-adbd:
-	./tests/test-adbd-binary.sh system/bin/adbd
+build-adbd-%:
+	DOCKER_BUILDKIT=1 docker build --build-arg TARGET_ARCH=$* \
+	    --target=binary --output=type=local,dest=out/ .
+	cp out/adbd system/bin/adbd.$*
+	rm -rf out
+
+test-adbd: $(addprefix test-adbd-,$(ARCHES))
+
+test-adbd-%:
+	./tests/test-adbd-binary.sh system/bin/adbd.$* $*
 
 update:
 	curl -fS -o META-INF/com/google/android/update-binary.tmp https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/module_installer.sh && \

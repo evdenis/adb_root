@@ -2,10 +2,18 @@
 # ADB Root - Magisk install-time customization script
 # Validates device compatibility and preserves user configuration.
 
-# --- Architecture check ---
-if [ "$ARCH" != "arm64" ]; then
-    abort "ERROR: ADB Root requires arm64. Detected architecture: $ARCH"
-fi
+# --- Architecture check and binary selection ---
+case "$ARCH" in
+    arm64|arm|x86|x86_64) ;;
+    *) abort "ERROR: Unsupported architecture: $ARCH" ;;
+esac
+
+ui_print "- Selecting adbd binary for $ARCH"
+cp "$MODPATH/system/bin/adbd.$ARCH" "$MODPATH/system/bin/adbd"
+chmod 755 "$MODPATH/system/bin/adbd"
+
+# Clean up arch-suffixed binaries (not needed at runtime)
+rm -f "$MODPATH/system/bin/adbd."*
 
 # --- Android version check (API 28 = Android 9, API 29 = Android 10) ---
 case "$API" in

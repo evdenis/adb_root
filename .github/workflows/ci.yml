@@ -44,7 +44,9 @@ jobs:
         run: |
           ZIP=$(ls adb_root-v*.zip)
           for f in module.prop service.sh customize.sh common/default_config.sh \
-                   system.prop sepolicy.rule uninstall.sh system/bin/adbd \
+                   system.prop sepolicy.rule uninstall.sh \
+                   system/bin/adbd.arm64 system/bin/adbd.arm \
+                   system/bin/adbd.x86 system/bin/adbd.x86_64 \
                    META-INF/com/google/android/update-binary \
                    META-INF/com/google/android/updater-script; do
             unzip -l "$ZIP" | grep -q "$f" || { echo "MISSING: $f"; exit 1; }
@@ -72,11 +74,14 @@ jobs:
           echo "All required fields present"
 
   build-adbd:
-    name: Build adbd from source
+    name: Build adbd (${{ matrix.arch }})
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'build-adbd')
+    strategy:
+      matrix:
+        arch: [arm64, arm, x86, x86_64]
     steps:
       - uses: actions/checkout@v6
 
@@ -84,17 +89,20 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build adbd binary
-        run: DOCKER_BUILDKIT=1 docker build --target=binary --output=type=local,dest=out/ .
+        run: >-
+          DOCKER_BUILDKIT=1 docker build
+          --build-arg TARGET_ARCH=${{ matrix.arch }}
+          --target=binary --output=type=local,dest=out/ .
 
       - name: Install QEMU user-static
         run: sudo apt-get update && sudo apt-get install -y qemu-user-static
 
       - name: Verify binary
-        run: ./tests/test-adbd-binary.sh out/adbd
+        run: ./tests/test-adbd-binary.sh out/adbd ${{ matrix.arch }}
 
       - name: Upload adbd artifact
         uses: actions/upload-artifact@v4
         with:
-          name: adbd-aarch64
+          name: adbd-${{ matrix.arch }}
           path: out/adbd
           retention-days: 7
