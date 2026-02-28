@@ -9,7 +9,7 @@ all: $(ZIP)
 zip: $(ZIP)
 
 $(ZIP): clean
-	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes Makefile Dockerfile build-adbd.sh /patches* /tests* /hooks/* /.git* /.github* /.claude*
+	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes .dockerignore Makefile Dockerfile build-adbd.sh /docker* /patches* /tests* /hooks/* /.git* /.github* /.claude*
 
 install: $(ZIP)
 	adb push $(ZIP) /sdcard/ && \

@@ -1,0 +1,8 @@
+.git/
+.github/
+.claude/
+*.zip
+tests/
+system/bin/adbd
+LICENSE
+CLAUDE.md
