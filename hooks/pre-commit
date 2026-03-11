@@ -1,0 +1,27 @@
+#!/bin/sh
+# Pre-commit hook: ShellCheck + version checks
+
+ERRORS=0
+
+# ShellCheck all .sh files
+if command -v shellcheck >/dev/null 2>&1; then
+    for f in *.sh; do
+        [ -f "$f" ] || continue
+        if ! shellcheck -s sh "$f"; then
+            ERRORS=$((ERRORS+1))
+        fi
+    done
+else
+    echo "Warning: shellcheck not installed, skipping"
+fi
+
+# Check CHANGELOG.md has entry for current version
+if [ -f module.prop ] && [ -f CHANGELOG.md ]; then
+    PROP_VER=$(grep '^version=' module.prop | cut -d= -f2)
+    if ! grep -q "^## ${PROP_VER}$" CHANGELOG.md; then
+        echo "Error: CHANGELOG.md missing section for ${PROP_VER}"
+        ERRORS=$((ERRORS+1))
+    fi
+fi
+
+exit $ERRORS
