@@ -9,14 +9,62 @@ permissions:
   contents: write
 
 jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   release:
-    name: Build & publish release
+    name: Validate & publish release
+    needs: ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
+      - name: Version consistency check
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          PROP_VER=$(grep '^version=' module.prop | cut -d'=' -f2)
+          if [ "$TAG" != "$PROP_VER" ]; then
+            echo "ERROR: Tag ($TAG) does not match module.prop version ($PROP_VER)"
+            exit 1
+          fi
+          if ! grep -q "^## ${TAG}$" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md missing section for ${TAG}"
+            exit 1
+          fi
+          echo "Version consistent: $TAG"
+
+      - name: Check update-binary freshness
+        run: |
+          make update
+          if ! git diff --quiet META-INF/com/google/android/update-binary; then
+            echo "ERROR: update-binary is outdated — run 'make update' and commit"
+            exit 1
+          fi
+
+      - name: Verify updater-script
+        run: |
+          CONTENT=$(cat META-INF/com/google/android/updater-script)
+          if [ "$CONTENT" != "#MAGISK" ]; then
+            echo "ERROR: updater-script must contain only '#MAGISK'"
+            exit 1
+          fi
+          echo "updater-script OK"
+
       - name: Build zip
         run: make zip
+
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Extract content between this version heading and the next
+          NOTES=$(awk "/^## ${TAG}\$/{ found=1; next } /^## /{ if(found) exit } found{ print }" CHANGELOG.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="Release ${TAG}"
+          fi
+          # Write to file for gh release
+          echo "$NOTES" > /tmp/release-notes.md
 
       - name: Generate update.json
         run: |
@@ -41,6 +89,6 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/}"
           gh release create "$TAG" \
             --title "$TAG" \
-            --generate-notes \
+            --notes-file /tmp/release-notes.md \
             adb_root-v*.zip \
             update.json
