@@ -5,6 +5,7 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_call:
 
 jobs:
   shellcheck:
@@ -14,8 +15,14 @@ jobs:
       - uses: actions/checkout@v6
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
-      - name: Lint service.sh
-        run: shellcheck service.sh
+      - name: Lint shell scripts
+        run: |
+          STATUS=0
+          for f in *.sh; do
+            [ -f "$f" ] || continue
+            shellcheck -s sh "$f" || STATUS=1
+          done
+          exit $STATUS
 
   zip:
     name: Build & verify zip
@@ -32,7 +39,7 @@ jobs:
       - name: Verify expected files are present
         run: |
           ZIP=$(ls adb_root-v*.zip)
-          for f in module.prop service.sh system.prop sepolicy.rule system/bin/adbd \
+          for f in module.prop service.sh system.prop sepolicy.rule customize.sh uninstall.sh system/bin/adbd \
                    META-INF/com/google/android/update-binary \
                    META-INF/com/google/android/updater-script; do
             unzip -l "$ZIP" | grep -q "$f" || { echo "MISSING: $f"; exit 1; }
@@ -42,7 +49,7 @@ jobs:
       - name: Verify excluded files are absent
         run: |
           ZIP=$(ls adb_root-v*.zip)
-          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE; do
+          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE README.md CHANGELOG.md update.json hooks/; do
             if unzip -l "$ZIP" | grep -q "$f"; then
               echo "UNEXPECTED: $f found in zip"
               exit 1
