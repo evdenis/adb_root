@@ -1,4 +1,4 @@
-getprop = $(shell cat module.prop | grep "^$(1)=" | head -n1 | cut -d'=' -f2)
+getprop = $(shell grep "^$(1)=" module.prop | head -n1 | cut -d'=' -f2)
 
 MODNAME ?= $(call getprop,id)
 MODVER ?= $(call getprop,version)
@@ -9,7 +9,7 @@ all: $(ZIP)
 zip: $(ZIP)
 
 $(ZIP): clean
-	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json .gitignore .gitattributes Makefile /hooks/* /.git* /.github* /.claude*
+	zip -r9 $(ZIP) . -x $(MODNAME)-*.zip LICENSE README.md CHANGELOG.md CLAUDE.md update.json cliff.toml .gitignore .gitattributes Makefile /hooks/* /.git* /.github* /.claude*
 
 install: $(ZIP)
 	adb push $(ZIP) /sdcard/ && \
@@ -25,5 +25,9 @@ update:
 
 setup:
 	ln -sf ../../hooks/pre-commit .git/hooks/pre-commit
+	ln -sf ../../hooks/commit-msg .git/hooks/commit-msg
 
-.PHONY: all zip install clean setup update
+changelog:
+	git-cliff --config cliff.toml --output CHANGELOG.md
+
+.PHONY: all zip install clean setup update changelog

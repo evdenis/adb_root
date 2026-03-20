@@ -49,7 +49,7 @@ jobs:
       - name: Verify excluded files are absent
         run: |
           ZIP=$(ls adb_root-v*.zip)
-          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE README.md CHANGELOG.md update.json hooks/; do
+          for f in .gitignore CLAUDE.md .claude/ .git/ .github/ Makefile LICENSE README.md CHANGELOG.md update.json cliff.toml hooks/; do
             if unzip -l "$ZIP" | grep -q "$f"; then
               echo "UNEXPECTED: $f found in zip"
               exit 1

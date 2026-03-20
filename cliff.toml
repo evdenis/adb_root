@@ -1,0 +1,56 @@
+# git-cliff configuration
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = """
+# Changelog\n
+"""
+body = """
+{% if version %}\
+    ## {{ version }}
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}\n
+{% endif %}\
+"""
+footer = """
+## v2.0
+- Add service.sh to ensure adbd runs as root after boot
+- Add system.prop to set service.adb.root=1
+- Add Magisk auto-updater support (updateJson)
+- Add CI workflows (ShellCheck, build verification, automated releases)
+- Add Dependabot for GitHub Actions updates
+
+## v1.0
+- Initial release
+- Patched adbd binary for aarch64 Android 9/10
+- SELinux policy rules for root adbd
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+tag_pattern = "^v[0-9]"
+skip_tags = "^v[12]\\.0$"
+commit_preprocessors = [
+    # Keep only the first line of multi-line commit messages
+    { pattern = "\n[\\s\\S]*", replace = "" },
+]
+commit_parsers = [
+    # Historical commits (pre-conventional); skipped via skip_tags but kept as safety net
+    { message = "^init$", skip = true },
+    { message = "^adbd$", skip = true },
+
+    { message = "^feat", group = "<!-- 0 -->Features" },
+    { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+    { message = "^ci", group = "<!-- 2 -->CI/CD" },
+    { message = "^build", group = "<!-- 3 -->Build" },
+    { message = "^docs", group = "<!-- 4 -->Documentation" },
+    { message = "^refactor", group = "<!-- 5 -->Refactoring" },
+    { message = "^test", group = "<!-- 6 -->Testing" },
+    { message = "^chore", group = "<!-- 7 -->Chores" },
+]

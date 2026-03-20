@@ -1,0 +1,19 @@
+#!/bin/sh
+# Validate commit message against Conventional Commits format.
+# Installed via: make setup
+
+MSG=$(head -1 "$1")
+
+# Allow merge, fixup, squash, and amend commits
+case "$MSG" in
+    Merge\ *|fixup!\ *|squash!\ *|amend!\ *) exit 0 ;;
+esac
+
+PATTERN='^(feat|fix|build|ci|docs|refactor|test|chore)(\([a-zA-Z0-9._-]+\))?!?: [A-Z]'
+if ! printf '%s' "$MSG" | grep -qE "$PATTERN"; then
+    echo "ERROR: Commit message does not follow Conventional Commits format"
+    echo "Expected: type(scope): Description"
+    echo "Types: feat, fix, build, ci, docs, refactor, test, chore"
+    echo "Got: $MSG"
+    exit 1
+fi

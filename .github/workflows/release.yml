@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Version consistency check
         run: |
@@ -54,17 +56,14 @@ jobs:
       - name: Build zip
         run: make zip
 
-      - name: Extract release notes from CHANGELOG
-        id: notes
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          # Extract content between this version heading and the next
-          NOTES=$(awk "/^## ${TAG}\$/{ found=1; next } /^## /{ if(found) exit } found{ print }" CHANGELOG.md)
-          if [ -z "$NOTES" ]; then
-            NOTES="Release ${TAG}"
-          fi
-          # Write to file for gh release
-          echo "$NOTES" > /tmp/release-notes.md
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --unreleased --tag ${{ github.ref_name }} --strip all
+        env:
+          OUTPUT: /tmp/release-notes.md
 
       - name: Generate update.json
         run: |
