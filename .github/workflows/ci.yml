@@ -12,7 +12,7 @@ jobs:
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
       - name: Lint shell scripts
@@ -28,7 +28,7 @@ jobs:
     name: Build & verify zip
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Build zip
         run: make zip
